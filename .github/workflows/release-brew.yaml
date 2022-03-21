@@ -84,32 +84,32 @@ jobs:
           asset_name: ${{ steps.packages.outputs.bottle_name }}
           asset_content_type: application/x-gzip
 
-    update-pr:
-      needs: build-bottle
-      runs-on: ubuntu-latest
+  update-pr:
+    needs: build-bottle
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
+    steps:
+    - uses: actions/download-artifact@v3
+      with:
+        name: bottles
+    - name: Configure git user name and email
+      uses: Homebrew/actions/git-user-config@master
+      with:
+        username: aws-build-accumulator-release-ci
+    - name: Get release tag name
+      run: echo "RELEASE_TAG=${GITHUB_REF/refs\/tags\/}" >> $GITHUB_ENV
+    - name: fork and pr
+      run: |
+        brew tap aws/tap
+        cd $(brew --repository)/Library/Taps/aws/homebrew-tap/
+        git remote add fork-repo https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/aws-build-accumulator-release-ci/homebrew-tap.git
+        git fetch fork-repo
+        git checkout -B bump-$RELEASE_TAG fork-repo/bump-$RELEASE_TAG
+        cd -
+        brew bottle --merge --write $(ls *.json)
+        cd $(brew --repository)/Library/Taps/aws/homebrew-tap/
+        git push fork-repo bump-$RELEASE_TAG
       env:
         GITHUB_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
-      steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: bottles
-      - name: Configure git user name and email
-        uses: Homebrew/actions/git-user-config@master
-        with:
-          username: aws-build-accumulator-release-ci
-      - name: Get release tag name
-        run: echo "RELEASE_TAG=${GITHUB_REF/refs\/tags\/}" >> $GITHUB_ENV
-      - name: fork and pr
-        run: |
-          brew tap aws/tap
-          cd $(brew --repository)/Library/Taps/aws/homebrew-tap/
-          git remote add fork-repo https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/aws-build-accumulator-release-ci/homebrew-tap.git
-          git fetch fork-repo
-          git checkout -B bump-$RELEASE_TAG fork-repo/bump-$RELEASE_TAG
-          cd -
-          brew bottle --merge --write $(ls *.json)
-          cd $(brew --repository)/Library/Taps/aws/homebrew-tap/
-          git push fork-repo bump-$RELEASE_TAG
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
-          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
+        HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
