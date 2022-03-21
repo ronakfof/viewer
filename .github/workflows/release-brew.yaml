@@ -55,7 +55,7 @@ jobs:
           cd $(brew --repository)/Library/Taps/aws/homebrew-tap/
           git remote add fork-repo https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/aws-viewer-for-cbmc-release-ci/homebrew-tap.git
           git fetch fork-repo
-          git checkout -B bump-$RELEASE_TAG fork-repo/bump-$RELEASE_TAG
+          git checkout -B bump-cbmc-$RELEASE_TAG fork-repo/bump-cbmc-$RELEASE_TAG
           cd -
           brew install --build-bottle aws/tap/cbmc-viewer
           brew bottle --root-url=https://github.com/ronakfof/viewer/releases/download/$RELEASE_TAG --verbose --json aws/tap/cbmc-viewer
@@ -105,11 +105,11 @@ jobs:
         cd $(brew --repository)/Library/Taps/aws/homebrew-tap/
         git remote add fork-repo https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/aws-viewer-for-cbmc-release-ci/homebrew-tap.git
         git fetch fork-repo
-        git checkout -B bump-$RELEASE_TAG fork-repo/bump-$RELEASE_TAG
+        git checkout -B bump-cbmc-$RELEASE_TAG fork-repo/bump-cbmc-$RELEASE_TAG
         cd -
         brew bottle --merge --write $(ls *.json)
         cd $(brew --repository)/Library/Taps/aws/homebrew-tap/
-        git push fork-repo bump-$RELEASE_TAG
+        git push fork-repo bump-cbmc-$RELEASE_TAG
       env:
         GITHUB_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
         HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
