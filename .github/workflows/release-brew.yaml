@@ -53,7 +53,7 @@ jobs:
           brew tap aws/tap
           brew update-reset
           cd $(brew --repository)/Library/Taps/aws/homebrew-tap/
-          git remote add fork-repo https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/aws-build-accumulator-release-ci/homebrew-tap.git
+          git remote add fork-repo https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/aws-viewer-for-cbmc-release-ci/homebrew-tap.git
           git fetch fork-repo
           git checkout -B bump-$RELEASE_TAG fork-repo/bump-$RELEASE_TAG
           cd -
@@ -103,7 +103,7 @@ jobs:
       run: |
         brew tap aws/tap
         cd $(brew --repository)/Library/Taps/aws/homebrew-tap/
-        git remote add fork-repo https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/aws-build-accumulator-release-ci/homebrew-tap.git
+        git remote add fork-repo https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/aws-viewer-for-cbmc-release-ci/homebrew-tap.git
         git fetch fork-repo
         git checkout -B bump-$RELEASE_TAG fork-repo/bump-$RELEASE_TAG
         cd -
