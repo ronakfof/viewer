@@ -9,8 +9,7 @@ env:
   FORMULA: cbmc-viewer
   TAP: ronakfof/tap
   BOT_USER: aws-viewer-for-cbmc-release-ci
-  FORK_REPO: https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/${{ env.BOT_USER }}/homebrew-$(echo "${{ env.TAP }}"" | cut -d "/" -f 2).git
-  ROOT_URL: https://github.com/$GITHUB_REPOSITORY/releases/download/${{ env.RELEASE_TAG }}
+  FORK_REPO: https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/aws-viewer-for-cbmc-release-ci/homebrew-tap.git
 
 jobs:
   homebrew-pr:
@@ -58,7 +57,7 @@ jobs:
       - name: Build bottle
         run: |
           brew install --build-bottle ${{ env.TAP }}/${{ env.FORMULA }}
-          brew bottle --root-url=${{ env.ROOT_URL }} --verbose --json ${{ env.TAP }}/${{ env.FORMULA }}
+          brew bottle --root-url=https://github.com/$GITHUB_REPOSITORY/releases/download/${{ env.RELEASE_TAG }} --verbose --json ${{ env.TAP }}/${{ env.FORMULA }}
 
       - name: Upload bottles as artifact
         if: always()
