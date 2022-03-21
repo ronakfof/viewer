@@ -47,6 +47,7 @@ jobs:
 
       - name: Checkout PR
         run: |
+          brew untap ${brew tap | grep -v homebrew}
           brew tap ${{ env.TAP }}
           brew update-reset
           cd $(brew --repo ${{ env.TAP }})
@@ -110,6 +111,7 @@ jobs:
 
     - name: Checkout PR
       run: |
+        brew untap ${brew tap | grep -v homebrew}
         brew tap ${{ env.TAP }}
         brew update-reset
         cd $(brew --repo ${{ env.TAP }})
