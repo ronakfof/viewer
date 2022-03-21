@@ -7,7 +7,8 @@ env:
   RELEASE_TAG: ${GITHUB_REF/refs\/tags\/}
   VERSION: $(echo ${{ github.ref }} | cut -d "/" -f 3 | cut -d "-" -f 2)
   FORMULA: cbmc-viewer
-  TAP: ronakfof/tap
+  TAP: aws/tap
+  PR_TAP: ronakfof/tap
   BOT_USER: aws-viewer-for-cbmc-release-ci
   FORK_REPO: https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/aws-viewer-for-cbmc-release-ci/homebrew-tap.git
 
@@ -24,8 +25,8 @@ jobs:
       - name: Create homebrew PR
         run: |
           brew update-reset
-          brew tap ${{ env.TAP }}
-          brew bump-formula-pr --tag "${{ env.RELEASE_TAG }}" --revision "$GITHUB_SHA" ${{ env.TAP }}/${{ env.FORMULA }}
+          brew tap ${{ env.PR_TAP }}
+          brew bump-formula-pr --tag "${{ env.RELEASE_TAG }}" --revision "$GITHUB_SHA" ${{ env.PR_TAP }}/${{ env.FORMULA }}
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
 
