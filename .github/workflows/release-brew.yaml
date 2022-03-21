@@ -70,7 +70,12 @@ jobs:
         run: |
           bottle_name="$(ls *.tar.gz)"
           echo "::set-output name=bottle::$bottle_name"
-          echo "::set-output name=bottle_name::$bottle_name"
+      - name: get_file_name
+        id: get_file_name
+        run: |
+          brew install jq
+          file_name="$(cat *.json | jq -r '."aws/tap/cbmc-viewer".bottle.tags[].filename')"
+          echo "::set-output name=file_name::$file_name"
       - name: Get release
         id: get_release_info
         uses: bruceadams/get-release@v1.2.3
@@ -81,7 +86,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release_info.outputs.upload_url }}
           asset_path: ${{ steps.packages.outputs.bottle }}
-          asset_name: ${{ steps.packages.outputs.bottle_name }}
+          asset_name: ${{ steps.get_file_name.outputs.file_name }}
           asset_content_type: application/x-gzip
 
   update-pr:
