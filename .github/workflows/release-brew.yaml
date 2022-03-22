@@ -4,13 +4,14 @@ on:
     types: [created]
 
 env:
-  RELEASE_TAG: ${GITHUB_REF/refs\/tags\/}
-  VERSION: $(echo ${{ github.ref }} | cut -d "/" -f 3 | cut -d "-" -f 2)
   FORMULA: cbmc-viewer
   TAP: aws/tap
-  PR_TAP: ronakfof/tap
   BOT_USER: aws-viewer-for-cbmc-release-ci
-  FORK_REPO: https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/$BOT_USER/homebrew-$(echo $TAP |cut -d "/" -f 2).git
+  BOT_PAT: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
+  RELEASE_TAG: ${GITHUB_REF/refs\/tags\/}
+  VERSION: $(echo ${{ github.ref }} | cut -d "/" -f 3 | cut -d "-" -f 2)
+  FORK_REPO: https://$BOT_PAT@github.com/$BOT_USER/homebrew-$(echo $TAP |cut -d "/" -f 2).git
+  PR_TAP: ronakfof/tap
 
 jobs:
   homebrew-pr:
