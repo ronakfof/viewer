@@ -147,5 +147,4 @@ jobs:
     - name: Generate and merge bottle DSL
       run: |
         brew bottle --merge --write $(ls *.json)
-        cd $(brew --repository)/Library/Taps/aws/homebrew-tap/
         git -C $(brew --repo ${{ env.TAP }}) push fork-repo bump-cbmc-${{ env.RELEASE_TAG }}
