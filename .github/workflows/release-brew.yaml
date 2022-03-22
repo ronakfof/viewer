@@ -29,7 +29,7 @@ jobs:
           brew update-reset
           brew bump-formula-pr --tag "${{ env.RELEASE_TAG }}" --revision "$GITHUB_SHA" ${{ env.PR_TAP }}/${{ env.FORMULA }}
         env:
-          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
+          HOMEBREW_GITHUB_API_TOKEN: ${{ env.BOT_PAT }}
 
   build-bottle:
     needs: homebrew-pr
@@ -99,7 +99,7 @@ jobs:
     needs: build-bottle
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
+      GITHUB_TOKEN: ${{ env.BOT_PAT }}
     steps:
     - uses: actions/download-artifact@v3
       with:
