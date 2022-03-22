@@ -14,6 +14,7 @@ env:
 
 jobs:
   homebrew-pr:
+    
     name: Homebrew Bump Formula PR
     runs-on: macos-10.15
     steps:
@@ -24,105 +25,106 @@ jobs:
 
       - name: Create homebrew PR
         run: |
-          brew tap ${{ env.PR_TAP }}
-          brew update-reset
-          brew bump-formula-pr --tag "${{ env.RELEASE_TAG }}" --revision "$GITHUB_SHA" ${{ env.PR_TAP }}/${{ env.FORMULA }}
-        env:
-          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
+          echo ${{ github.event }}
+          echo ${{ github.event.release.upload_url }}
+          echo ${{ github.release.upload_url }}
+          # brew tap ${{ env.PR_TAP }}
+          # brew update-reset
+          # brew bump-formula-pr --tag "${{ env.RELEASE_TAG }}" --revision "$GITHUB_SHA" ${{ env.PR_TAP }}/${{ env.FORMULA }}
 
-  build-bottle:
-    needs: homebrew-pr
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, macos-10.15]
-    runs-on: ${{ matrix.os }}
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Set up Homebrew
-        id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@master
+  # build-bottle:
+  #   needs: homebrew-pr
+  #   strategy:
+  #     matrix:
+  #       os: [ubuntu-latest, macos-latest, macos-10.15]
+  #   runs-on: ${{ matrix.os }}
+  #   env:
+  #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #   steps:
+  #     - name: Set up Homebrew
+  #       id: set-up-homebrew
+  #       uses: Homebrew/actions/setup-homebrew@master
 
-      - name: Install Homebrew Bundler RubyGems
-        run: brew install-bundler-gems
+  #     - name: Install Homebrew Bundler RubyGems
+  #       run: brew install-bundler-gems
 
-      - name: Checkout PR
-        run: |
-          brew tap ${{ env.TAP }}
-          brew update-reset
-          cd $(brew --repo ${{ env.TAP }})
-          git remote add fork-repo ${{ env.FORK_REPO }}
-          git fetch fork-repo
-          git checkout -B bump-${{ env.FORMULA }}-${{ env.VERSION }} fork-repo/bump-${{ env.FORMULA }}-${{ env.VERSION }}
+  #     - name: Checkout PR
+  #       run: |
+  #         brew tap ${{ env.TAP }}
+  #         brew update-reset
+  #         cd $(brew --repo ${{ env.TAP }})
+  #         git remote add fork-repo ${{ env.FORK_REPO }}
+  #         git fetch fork-repo
+  #         git checkout -B bump-${{ env.FORMULA }}-${{ env.VERSION }} fork-repo/bump-${{ env.FORMULA }}-${{ env.VERSION }}
 
-      - name: Tap Syntax
-        run: |
-          brew audit --online --git --skip-style ${{ env.TAP }}/${{ env.FORMULA }}
-          brew style ${{ env.TAP }}/${{ env.FORMULA }}
+  #     - name: Tap Syntax
+  #       run: |
+  #         brew audit --online --git --skip-style ${{ env.TAP }}/${{ env.FORMULA }}
+  #         brew style ${{ env.TAP }}/${{ env.FORMULA }}
 
-      - name: Test Formula
-        run: |
-            brew test-bot --tap ${{ env.TAP }} --testing-formulae ${{ env.TAP }}/${{ env.FORMULA }} --only-formulae --root-url=https://github.com/$GITHUB_REPOSITORY/releases/download/${{ env.RELEASE_TAG }}
+  #     - name: Test Formula
+  #       run: |
+  #           brew test-bot --tap ${{ env.TAP }} --testing-formulae ${{ env.TAP }}/${{ env.FORMULA }} --only-formulae --root-url=https://github.com/$GITHUB_REPOSITORY/releases/download/${{ env.RELEASE_TAG }}
 
-      - name: Get Package Path
-        id: get_package_path
-        run: |
-          bottle_name="$(ls *.tar.gz)"
-          echo "::set-output name=bottle::$bottle_name"
+  #     - name: Get Package Path
+  #       id: get_package_path
+  #       run: |
+  #         bottle_name="$(ls *.tar.gz)"
+  #         echo "::set-output name=bottle::$bottle_name"
 
-      - name: Get File Name
-        id: get_file_name
-        run: |
-          brew install jq
-          file_name="$(cat *.json | jq -r '."${{ env.TAP }}/${{ env.FORMULA }}".bottle.tags[].filename')"
-          echo "::set-output name=file_name::$file_name"
+  #     - name: Get File Name
+  #       id: get_file_name
+  #       run: |
+  #         brew install jq
+  #         file_name="$(cat *.json | jq -r '."${{ env.TAP }}/${{ env.FORMULA }}".bottle.tags[].filename')"
+  #         echo "::set-output name=file_name::$file_name"
 
-      - name: Upload bottles as artifact
-        if: always()
-        uses: actions/upload-artifact@main
-        with:
-          name: bottles
-          path: '*.bottle.*'
+  #     - name: Upload bottles as artifact
+  #       if: always()
+  #       uses: actions/upload-artifact@main
+  #       with:
+  #         name: bottles
+  #         path: '*.bottle.*'
 
-      - name: Get release
-        id: get_release_info
-        uses: bruceadams/get-release@v1.2.3
+  #     - name: Get release
+  #       id: get_release_info
+  #       uses: bruceadams/get-release@v1.2.3
 
-      - name: Upload release binary
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-          asset_path: ${{ steps.get_package_path.outputs.bottle }}
-          asset_name: ${{ steps.get_file_name.outputs.file_name }}
-          asset_content_type: application/x-gzip
+  #     - name: Upload release binary
+  #       uses: actions/upload-release-asset@v1.0.2
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ steps.get_release_info.outputs.upload_url }}
+  #         asset_path: ${{ steps.get_package_path.outputs.bottle }}
+  #         asset_name: ${{ steps.get_file_name.outputs.file_name }}
+  #         asset_content_type: application/x-gzip
 
-  update-pr:
-    needs: build-bottle
-    runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
-    steps:
-    - uses: actions/download-artifact@v3
-      with:
-        name: bottles
+  # update-pr:
+  #   needs: build-bottle
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     GITHUB_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
+  #   steps:
+  #   - uses: actions/download-artifact@v3
+  #     with:
+  #       name: bottles
 
-    - name: Configure git user name and email
-      uses: Homebrew/actions/git-user-config@master
-      with:
-        username: ${{ env.BOT_USER }}
+  #   - name: Configure git user name and email
+  #     uses: Homebrew/actions/git-user-config@master
+  #     with:
+  #       username: ${{ env.BOT_USER }}
 
-    - name: Checkout PR
-      run: |
-        brew tap ${{ env.TAP }}
-        brew update-reset
-        cd $(brew --repo ${{ env.TAP }})
-        git remote add fork-repo ${{ env.FORK_REPO }}
-        git fetch fork-repo
-        git checkout -B bump-${{ env.FORMULA }}-${{ env.VERSION }} fork-repo/bump-${{ env.FORMULA }}-${{ env.VERSION }}
+  #   - name: Checkout PR
+  #     run: |
+  #       brew tap ${{ env.TAP }}
+  #       brew update-reset
+  #       cd $(brew --repo ${{ env.TAP }})
+  #       git remote add fork-repo ${{ env.FORK_REPO }}
+  #       git fetch fork-repo
+  #       git checkout -B bump-${{ env.FORMULA }}-${{ env.VERSION }} fork-repo/bump-${{ env.FORMULA }}-${{ env.VERSION }}
 
-    - name: Generate and merge bottle DSL
-      run: |
-        brew bottle --merge --write $(ls *.json)
-        git -C $(brew --repo ${{ env.TAP }}) push fork-repo bump-cbmc-${{ env.RELEASE_TAG }}
+  #   - name: Generate and merge bottle DSL
+  #     run: |
+  #       brew bottle --merge --write $(ls *.json)
+  #       git -C $(brew --repo ${{ env.TAP }}) push fork-repo bump-cbmc-${{ env.RELEASE_TAG }}
