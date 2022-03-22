@@ -11,6 +11,7 @@ env:
   PR_TAP: ronakfof/tap
   BOT_USER: aws-viewer-for-cbmc-release-ci
   FORK_REPO: https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/aws-viewer-for-cbmc-release-ci/homebrew-tap.git
+  RUNNERS: [ubuntu-latest, macos-latest, macos-10.15]
 
 jobs:
   homebrew-pr:
@@ -34,7 +35,7 @@ jobs:
     needs: homebrew-pr
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-10.15]
+        os: ${{ env.RUNNERS }}
     runs-on: ${{ matrix.os }}
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
