@@ -62,16 +62,7 @@ jobs:
 
       - name: Test Formula
         run: |
-            brew fetch --retry --build-bottle ${{ env.TAP }}/${{ env.FORMULA }}
-            brew install --only-dependencies --verbose --build-bottle ${{ env.TAP }}/${{ env.FORMULA }}
-            brew install --verbose --build-bottle ${{ env.TAP }}/${{ env.FORMULA }}
-
-      - name: Build bottle
-        run: |
-          brew bottle --root-url=https://github.com/$GITHUB_REPOSITORY/releases/download/${{ env.RELEASE_TAG }} --verbose --json ${{ env.TAP }}/${{ env.FORMULA }}
-      
-      - name: Test uninstallation
-        run: brew uninstall --force ${{ env.TAP }}/${{ env.FORMULA }}
+            brew test-bot --tap ${{ env.TAP }} --testing-formulae ${{ env.TAP }}/${{ env.FORMULA }} --only-formulae --root-url=https://github.com/$GITHUB_REPOSITORY/releases/download/${{ env.RELEASE_TAG }}
 
       - name: Get Package Path
         id: get_package_path
@@ -85,19 +76,6 @@ jobs:
           brew install jq
           file_name="$(cat *.json | jq -r '."${{ env.TAP }}/${{ env.FORMULA }}".bottle.tags[].filename')"
           echo "::set-output name=file_name::$file_name"
-
-      - name: Test installation from bottle
-        run: |
-          brew install --only-dependencies ./${{ steps.get_package_path.outputs.bottle }}
-          brew install ./${{ steps.get_package_path.outputs.bottle }}
-          brew linkage --test ${{ env.TAP }}/${{ env.FORMULA }}
-          brew linkage --cached --test --strict ${{ env.TAP }}/${{ env.FORMULA }}
-          brew linkage --cached ${{ env.TAP }}/${{ env.FORMULA }}
-
-      - name: Run Tests
-        run: |
-          brew install --only-dependencies --include-test ${{ env.TAP }}/${{ env.FORMULA }}
-          brew test --verbose ${{ env.TAP }}/${{ env.FORMULA }}
 
       - name: Upload bottles as artifact
         if: always()
