@@ -24,8 +24,8 @@ jobs:
 
       - name: Create homebrew PR
         run: |
-          brew update-reset
           brew tap ${{ env.PR_TAP }}
+          brew update-reset
           brew bump-formula-pr --tag "${{ env.RELEASE_TAG }}" --revision "$GITHUB_SHA" ${{ env.PR_TAP }}/${{ env.FORMULA }}
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
@@ -55,17 +55,23 @@ jobs:
           git fetch fork-repo
           git checkout -B bump-${{ env.FORMULA }}-${{ env.VERSION }} fork-repo/bump-${{ env.FORMULA }}-${{ env.VERSION }}
 
+      - name: Tap Syntax
+        run: |
+          brew audit --online --git --skip-style ${{ env.TAP }}/${{ env.FORMULA }}
+          brew style ${{ env.TAP }}/${{ env.FORMULA }}
+
+      - name: Test Formula
+        run: |
+            brew fetch --retry --build-bottle ${{ env.TAP }}/${{ env.FORMULA }}
+            brew install --only-dependencies --verbose --build-bottle ${{ env.TAP }}/${{ env.FORMULA }}
+            brew install --verbose --build-bottle ${{ env.TAP }}/${{ env.FORMULA }}
+
       - name: Build bottle
         run: |
-          brew install --build-bottle ${{ env.TAP }}/${{ env.FORMULA }}
           brew bottle --root-url=https://github.com/$GITHUB_REPOSITORY/releases/download/${{ env.RELEASE_TAG }} --verbose --json ${{ env.TAP }}/${{ env.FORMULA }}
-
-      - name: Upload bottles as artifact
-        if: always()
-        uses: actions/upload-artifact@main
-        with:
-          name: bottles
-          path: '*.bottle.*'
+      
+      - name: Test uninstallation
+        run: brew uninstall --force ${{ env.TAP }}/${{ env.FORMULA }}
 
       - name: Get Package Path
         id: get_package_path
@@ -79,6 +85,26 @@ jobs:
           brew install jq
           file_name="$(cat *.json | jq -r '."${{ env.TAP }}/${{ env.FORMULA }}".bottle.tags[].filename')"
           echo "::set-output name=file_name::$file_name"
+
+      - name: Test installation from bottle
+        run: |
+          brew install --only-dependencies ./${{ steps.get_package_path.outputs.bottle }}
+          brew install ./${{ steps.get_package_path.outputs.bottle }}
+          brew linkage --test ${{ env.TAP }}/${{ env.FORMULA }}
+          brew linkage --cached --test --strict ${{ env.TAP }}/${{ env.FORMULA }}
+          brew linkage --cached ${{ env.TAP }}/${{ env.FORMULA }}
+
+      - name: Run Tests
+        run: |
+          brew install --only-dependencies --include-test ${{ env.TAP }}/${{ env.FORMULA }}
+          brew test --verbose ${{ env.TAP }}/${{ env.FORMULA }}
+
+      - name: Upload bottles as artifact
+        if: always()
+        uses: actions/upload-artifact@main
+        with:
+          name: bottles
+          path: '*.bottle.*'
 
       - name: Get release
         id: get_release_info
