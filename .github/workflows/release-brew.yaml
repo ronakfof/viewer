@@ -1,3 +1,13 @@
+# See following documentations for more information - 
+# Creation and maintenance of personal taps: https://docs.brew.sh/How-to-Create-and-Maintain-a-Tap
+# More information about bottles: https://docs.brew.sh/Bottles
+# Create a tap with automatic tests and bottle creation workflows - https://brew.sh/2020/11/18/homebrew-tap-with-bottles-uploaded-to-github-releases/
+
+# This workflow can be used to perform certain tasks from main repository rather than a Tap -
+#     - Syntax Check
+#     - Run brew test-bot for testing and bottle creation
+#     - Add commit on top of PR created by brew bump-formla-pr to add generate bottle DSL to formula
+
 name: Release to brew
 on:
   release:
@@ -7,13 +17,14 @@ env:
   FORMULA: cbmc-viewer
   TAP: aws/tap
   BOT_USER: aws-viewer-for-cbmc-release-ci
+  BOT_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
   RELEASE_TAG: ${GITHUB_REF/refs\/tags\/} # GITHUB_REF = refs/tags/STRING-MAJOR.MINOR
-  VERSION: $(echo ${{ github.ref }} | cut -d "/" -f 3 | cut -d "-" -f 2)
-  FORK_REPO: https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/$BOT_USER/homebrew-$(echo $TAP |cut -d "/" -f 2).git
+  VERSION: $(echo $GITHUB_REF | cut -d "/" -f 3 | cut -d "-" -f 2)
+  FORK_REPO: https://$BOT_TOKEN@github.com/$BOT_USER/homebrew-$(echo $TAP |cut -d "/" -f 2).git
 
 jobs:
   homebrew-pr:
-    name: Homebrew Bump Formula PR to ronakfof/tap
+    name: Homebrew Bump Formula PR
     runs-on: macos-latest
     steps:
       - name: Configure git user name and email
@@ -27,7 +38,7 @@ jobs:
           brew update-reset
           brew bump-formula-pr --tag "${{ env.RELEASE_TAG }}" --revision "$GITHUB_SHA" ronakfof/tap/${{ env.FORMULA }}
         env:
-          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
+          HOMEBREW_GITHUB_API_TOKEN: ${{ env.BOT_TOKEN }}
 
   build-bottle:
     needs: homebrew-pr
@@ -81,8 +92,6 @@ jobs:
 
       - name: Upload release binary
         uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ${{ steps.get_package_path.outputs.bottle }}
@@ -93,8 +102,10 @@ jobs:
     needs: build-bottle
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+    # - name: Set GITHUB_TOKEN
+    #   run: echo "GITHUB_TOKEN=${{ env.BOT_TOKEN }}" >> $GITHUB_ENV
     - uses: actions/download-artifact@v3
       with:
         name: bottles
