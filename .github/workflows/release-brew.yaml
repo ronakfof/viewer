@@ -8,9 +8,8 @@ env:
   TAP: aws/tap
   BOT_USER: aws-viewer-for-cbmc-release-ci
   RELEASE_TAG: ${GITHUB_REF/refs\/tags\/} # GITHUB_REF = refs/tags/STRING-MAJOR.MINOR
-  VERSION: $(echo ${{ RELEASE_TAG }} | cut -d "-" -f 2)
+  VERSION: $(echo ${{ github.ref }} | cut -d "/" -f 3 | cut -d "-" -f 2)
   FORK_REPO: https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/$BOT_USER/homebrew-$(echo $TAP |cut -d "/" -f 2).git
-  ROOT_URL: https://github.com/$GITHUB_REPOSITORY/releases/download/${{ RELEASE_TAG }}
 
 jobs:
   homebrew-pr:
@@ -59,7 +58,7 @@ jobs:
 
       - name: Build bottle
         run: |
-          brew test-bot --tap ${{ env.TAP }} --testing-formulae ${{ env.TAP }}/${{ env.FORMULA }} --only-formulae --root-url=${{ env.ROOT_URL }}
+          brew test-bot --tap ${{ env.TAP }} --testing-formulae ${{ env.TAP }}/${{ env.FORMULA }} --only-formulae --root-url=https://github.com/$GITHUB_REPOSITORY/releases/download/${{ env.RELEASE_TAG }}
 
       - name: Get Package Path
         id: get_package_path
