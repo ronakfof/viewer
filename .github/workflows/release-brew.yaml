@@ -8,9 +8,9 @@ env:
   TAP: aws/tap
   BOT_USER: aws-viewer-for-cbmc-release-ci
   RELEASE_TAG: ${GITHUB_REF/refs\/tags\/} # GITHUB_REF = refs/tags/STRING-MAJOR.MINOR
-  VERSION: $(echo $(RELEASE_TAG) | cut -d "-" -f 2)
+  VERSION: $(echo ${RELEASE_TAG} | cut -d "-" -f 2)
   FORK_REPO: https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/$BOT_USER/homebrew-$(echo $TAP |cut -d "/" -f 2).git
-  ROOT_URL: https://github.com/$GITHUB_REPOSITORY/releases/download/$(RELEASE_TAG)
+  ROOT_URL: https://github.com/$GITHUB_REPOSITORY/releases/download/${RELEASE_TAG}
 
 jobs:
   homebrew-pr:
@@ -34,7 +34,7 @@ jobs:
     needs: homebrew-pr
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-10.15]
+        os: [ubuntu-latest, ubuntu-18.04, macos-latest, macos-10.15]
     runs-on: ${{ matrix.os }}
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
