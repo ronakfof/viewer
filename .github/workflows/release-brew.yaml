@@ -66,8 +66,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, macos-10.15]
     runs-on: ${{ matrix.os }}
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Set up Homebrew
         id: set-up-homebrew
@@ -112,6 +110,8 @@ jobs:
 
       - name: Upload release binary
         uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ${{ steps.get_package_path.outputs.bottle }}
