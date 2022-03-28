@@ -7,16 +7,15 @@ env:
   FORMULA: cbmc-viewer
   TAP: aws/tap
   BOT_USER: aws-viewer-for-cbmc-release-ci
-  BOT_PAT: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
-  RELEASE_TAG: ${GITHUB_REF/refs\/tags\/}
-  VERSION: $(echo ${{ github.ref }} | cut -d "/" -f 3 | cut -d "-" -f 2)
-  FORK_REPO: https://$BOT_PAT@github.com/$BOT_USER/homebrew-$(echo $TAP |cut -d "/" -f 2).git
-  PR_TAP: ronakfof/tap
+  RELEASE_TAG: ${GITHUB_REF/refs\/tags\/} # GITHUB_REF = refs/tags/STRING-MAJOR.MINOR
+  VERSION: $(echo $RELEASE_TAG | cut -d "-" -f 2)
+  FORK_REPO: https://${{ secrets.RELEASE_CI_ACCESS_TOKEN }}@github.com/$BOT_USER/homebrew-$(echo $TAP |cut -d "/" -f 2).git
+  ROOT_URL: https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG
 
 jobs:
   homebrew-pr:
-    name: Homebrew Bump Formula PR
-    runs-on: macos-10.15
+    name: Homebrew Bump Formula PR to ronakfof/tap
+    runs-on: macos-latest
     steps:
       - name: Configure git user name and email
         uses: Homebrew/actions/git-user-config@master
@@ -25,11 +24,11 @@ jobs:
 
       - name: Create homebrew PR
         run: |
-          brew tap ${{ env.PR_TAP }}
+          brew tap ronakfof/tap
           brew update-reset
-          brew bump-formula-pr --tag "${{ env.RELEASE_TAG }}" --revision "$GITHUB_SHA" ${{ env.PR_TAP }}/${{ env.FORMULA }}
+          brew bump-formula-pr --tag "${{ env.RELEASE_TAG }}" --revision "$GITHUB_SHA" ronakfof/tap/${{ env.FORMULA }}
         env:
-          HOMEBREW_GITHUB_API_TOKEN: ${{ env.BOT_PAT }}
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
 
   build-bottle:
     needs: homebrew-pr
@@ -43,9 +42,6 @@ jobs:
       - name: Set up Homebrew
         id: set-up-homebrew
         uses: Homebrew/actions/setup-homebrew@master
-
-      - name: Install Homebrew Bundler RubyGems
-        run: brew install-bundler-gems
 
       - name: Checkout PR
         run: |
@@ -61,9 +57,9 @@ jobs:
           brew audit --online --git --skip-style ${{ env.TAP }}/${{ env.FORMULA }}
           brew style ${{ env.TAP }}/${{ env.FORMULA }}
 
-      - name: Test Formula
+      - name: Build bottle
         run: |
-            brew test-bot --tap ${{ env.TAP }} --testing-formulae ${{ env.TAP }}/${{ env.FORMULA }} --only-formulae --root-url=https://github.com/$GITHUB_REPOSITORY/releases/download/${{ env.RELEASE_TAG }}
+          brew test-bot --tap ${{ env.TAP }} --testing-formulae ${{ env.TAP }}/${{ env.FORMULA }} --only-formulae --root-url=${{ env.ROOT_URL }}
 
       - name: Get Package Path
         id: get_package_path
@@ -79,7 +75,6 @@ jobs:
           echo "::set-output name=file_name::$file_name"
 
       - name: Upload bottles as artifact
-        if: always()
         uses: actions/upload-artifact@main
         with:
           name: bottles
@@ -99,7 +94,7 @@ jobs:
     needs: build-bottle
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ env.BOT_PAT }}
+      GITHUB_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
     steps:
     - uses: actions/download-artifact@v3
       with:
@@ -122,4 +117,5 @@ jobs:
     - name: Generate and merge bottle DSL
       run: |
         brew bottle --merge --write $(ls *.json)
-        git -C $(brew --repo ${{ env.TAP }}) push fork-repo bump-cbmc-${{ env.RELEASE_TAG }}
+        cd $(brew --repo ${{ env.TAP }})
+        git push fork-repo bump-${{ env.FORMULA }}-${{ env.VERSION }}
